@@ -85,12 +85,16 @@ public class TS_SUploadWebServlet extends HttpServlet {
             println(rs, "sourceFileName: " + sourceFileName);
 
             //COMPILING TARGET FILE
-            var targetFile = Path.of(profileValue);
+            var targetFile = fileSaveDir.toPath().resolve(profileValue).resolve(sourceFileName);
 
             //CREATE DIRECTORIES
             targetFile.getParent().toFile().mkdirs();
+
+            //STORE FILE
             Files.createFile(targetFile);
             sourceFile.write(targetFile.toFile());
+
+            //RETURN SUCCESS FLAG
             rs.setStatus(HttpServletResponse.SC_CREATED);
             println(rs, "RESULT_UPLOAD_USER_SUCCESS");
         } catch (Exception e) {
