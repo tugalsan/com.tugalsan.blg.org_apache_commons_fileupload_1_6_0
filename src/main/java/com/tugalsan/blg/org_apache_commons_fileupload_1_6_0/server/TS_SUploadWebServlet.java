@@ -1,14 +1,15 @@
 package com.tugalsan.blg.org_apache_commons_fileupload_1_6_0.server;
 
-import com.tugalsan.blg.org_apache_commons_fileupload_1_6_0.client.*;
 import javax.servlet.http.*;
 import java.io.File;
 import static java.lang.System.out;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.FileCleanerCleanup;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 @WebServlet("/u")
@@ -16,10 +17,11 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
         fileSizeThreshold = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_MEMORY,
         maxFileSize = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_FILE,
         maxRequestSize = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_REQUESTBALL,
-        location = "/" + TGS_SUploadUtils.LOC_NAME//means C:/bin/tomcat/home/work/Catalina/localhost/spi-xxx/upload (do create it)
+        location = "/" + TS_SUploadWebServlet.UPLOAD_DIR_NAME//means C:/bin/tomcat/home/work/Catalina/localhost/spi-xxx/upload (do create it)
 )
 public class TS_SUploadWebServlet extends HttpServlet {
 
+    final public static String UPLOAD_DIR_NAME = "p";
     final public static int UPLOAD_MB_LIMIT_MEMORY = 10;
     final public static int UPLOAD_MB_LIMIT_FILE = 25;
     final public static int UPLOAD_MB_LIMIT_REQUESTBALL = 50;
@@ -37,14 +39,14 @@ public class TS_SUploadWebServlet extends HttpServlet {
     public static void call(HttpServlet servlet, HttpServletRequest rq, HttpServletResponse rs) {
         try {
             var appPath = rq.getServletContext().getRealPath("");// constructs path of the directory to save uploaded file
-            var savePath = appPath + File.separator + TGS_SUploadUtils.LOC_NAME;// creates the save directory if it does not exists
+            var savePath = appPath + File.separator + TS_SUploadWebServlet.UPLOAD_DIR_NAME;// creates the save directory if it does not exists
             var fileSaveDir = new File(savePath);
             if (!fileSaveDir.exists()) {
                 fileSaveDir.mkdir();
             }
 
             if (!ServletFileUpload.isMultipartContent(rq)) {
-                println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_NOT_MULTIPART());
+                println(rs, "USER_NOT_MULTIPART");
                 return;
             }
 
@@ -55,14 +57,14 @@ public class TS_SUploadWebServlet extends HttpServlet {
             //GETTING PROFILE
             var profile = items.stream().filter(item -> item.isFormField()).findFirst().orElse(null);
             if (profile == null) {
-                println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_PROFILE_NULL());
+                println(rs, "RESULT_UPLOAD_USER_PROFILE_NULL");
                 return;
             }
             println(rs, "profile_selected");
 
             var profileValue = profile.getString();
             if (profileValue == null) {
-                println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_PROFILEVALUE_NULL());
+                println(rs, "RESULT_UPLOAD_USER_PROFILEVALUE_NULL");
                 return;
             }
             println(rs, "profileValue: " + profileValue);
@@ -70,14 +72,14 @@ public class TS_SUploadWebServlet extends HttpServlet {
             //GETING SOURCEFILE
             var sourceFile = items.stream().filter(item -> !item.isFormField()).findFirst().orElse(null);
             if (sourceFile == null) {
-                println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_SOURCEFILE_NULL());
+                println(rs, "RESULT_UPLOAD_USER_SOURCEFILE_NULL");
                 return;
             }
             println(rs, "sourceFile_selected");
 
             var sourceFileName = sourceFile.getName();
             if (sourceFileName == null) {
-                println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_SOURCEFILENAME_NULL());
+                println(rs, "RESULT_UPLOAD_USER_SOURCEFILENAME_NULL");
                 return;
             }
             println(rs, "sourceFileName: " + sourceFileName);
@@ -90,9 +92,9 @@ public class TS_SUploadWebServlet extends HttpServlet {
             Files.createFile(targetFile);
             sourceFile.write(targetFile.toFile());
             rs.setStatus(HttpServletResponse.SC_CREATED);
-            println(rs, TGS_SUploadUtils.RESULT_UPLOAD_USER_SUCCESS());
+            println(rs, "RESULT_UPLOAD_USER_SUCCESS");
         } catch (Exception e) {
-            TGS_FuncUtils.throwIfInterruptedException(e);
+            throwIfInterruptedException(e);
             e.printStackTrace();
         }
     }
@@ -102,7 +104,42 @@ public class TS_SUploadWebServlet extends HttpServlet {
             out.println("println: " + msg);
             rs.getWriter().println(msg);
         } catch (Exception e) {
-            TGS_FuncUtils.throwIfInterruptedException(e);
+            throwIfInterruptedException(e);
         }
+    }
+
+    //---------------------------- LISTENER ----------------
+    @WebListener
+    public class ApacheFileCleanerCleanup extends FileCleanerCleanup {
+
+    }
+
+    //----------------------------- UTILS -----------------------
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void _throwAsUncheckedException(Throwable exception) throws T {
+        throw (T) exception;
+    }
+
+    @Deprecated //only internalUse
+    private static void throwAsUncheckedException(Throwable exception) {
+        TS_SUploadWebServlet.<RuntimeException>_throwAsUncheckedException(exception);
+    }
+
+    public static <R> R throwIfInterruptedException(Throwable t) {
+        if (isInterruptedException(t)) {
+            Thread.currentThread().interrupt();
+            throwAsUncheckedException(t);
+        }
+        return null;
+    }
+
+    public static boolean isInterruptedException(Throwable t) {
+        if (t instanceof InterruptedException) {
+            return true;
+        }
+        if (t.getCause() != null) {
+            return isInterruptedException(t.getCause());
+        }
+        return false;
     }
 }
