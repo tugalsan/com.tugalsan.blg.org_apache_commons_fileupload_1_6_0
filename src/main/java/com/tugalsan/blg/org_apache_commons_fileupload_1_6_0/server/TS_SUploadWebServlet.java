@@ -1,7 +1,6 @@
 package com.tugalsan.blg.org_apache_commons_fileupload_1_6_0.server;
 
 import javax.servlet.http.*;
-import java.io.File;
 import static java.lang.System.out;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +16,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
         fileSizeThreshold = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_MEMORY,
         maxFileSize = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_FILE,
         maxRequestSize = 1024 * 1024 * TS_SUploadWebServlet.UPLOAD_MB_LIMIT_REQUESTBALL,
-        location = "/" + TS_SUploadWebServlet.UPLOAD_DIR_NAME//means C:/bin/tomcat/home/work/Catalina/localhost/spi-xxx/upload (do create it)
+        location = "/" + TS_SUploadWebServlet.UPLOAD_DIR_NAME//means C:/bin/tomcat/home/work/Catalina/localhost/spi-xxx/upload (do create it when implementing)
 )
 public class TS_SUploadWebServlet extends HttpServlet {
 
@@ -38,13 +37,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
 
     public static void call(HttpServlet servlet, HttpServletRequest rq, HttpServletResponse rs) {
         try {
-            var appPath = rq.getServletContext().getRealPath("");// constructs path of the directory to save uploaded file
-            var savePath = appPath + File.separator + TS_SUploadWebServlet.UPLOAD_DIR_NAME;// creates the save directory if it does not exists
-            var fileSaveDir = new File(savePath);
-            if (!fileSaveDir.exists()) {
-                fileSaveDir.mkdir();
-            }
-
+            //CHECK IF REQUEST IS MULTIPART
             if (!ServletFileUpload.isMultipartContent(rq)) {
                 println(rs, "USER_NOT_MULTIPART");
                 return;
@@ -54,7 +47,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             //WARNING: Dont touch request before this, like execution getParameter or such!
             var items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(rq);
 
-            //GETTING PROFILE
+            //GETTING PROFILE OBJECT
             var profile = items.stream().filter(item -> item.isFormField()).findFirst().orElse(null);
             if (profile == null) {
                 println(rs, "RESULT_UPLOAD_USER_PROFILE_NULL");
@@ -62,6 +55,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             }
             println(rs, "profile_selected");
 
+            //GETTING PROFILE VALUE
             var profileValue = profile.getString();
             if (profileValue == null) {
                 println(rs, "RESULT_UPLOAD_USER_PROFILEVALUE_NULL");
@@ -69,7 +63,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             }
             println(rs, "profileValue: " + profileValue);
 
-            //GETING SOURCEFILE
+            //GETING SOURCEFILE OBJECT
             var sourceFile = items.stream().filter(item -> !item.isFormField()).findFirst().orElse(null);
             if (sourceFile == null) {
                 println(rs, "RESULT_UPLOAD_USER_SOURCEFILE_NULL");
@@ -77,6 +71,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             }
             println(rs, "sourceFile_selected");
 
+            //GETING SOURCEFILE NAME
             var sourceFileName = sourceFile.getName();
             if (sourceFileName == null) {
                 println(rs, "RESULT_UPLOAD_USER_SOURCEFILENAME_NULL");
@@ -85,14 +80,14 @@ public class TS_SUploadWebServlet extends HttpServlet {
             println(rs, "sourceFileName: " + sourceFileName);
 
             //COMPILING TARGET FILE
-            var targetFile = fileSaveDir.toPath().resolve(profileValue).resolve(sourceFileName);
+            var pathDirApp = Path.of(rq.getServletContext().getRealPath(""));
+            var pathDirSave = pathDirApp.resolve(TS_SUploadWebServlet.UPLOAD_DIR_NAME);
+            var pathFileTarget = pathDirSave.resolve(profileValue).resolve(sourceFileName);
 
-            //CREATE DIRECTORIES
-            targetFile.getParent().toFile().mkdirs();
-
-            //STORE FILE
-            Files.createFile(targetFile);
-            sourceFile.write(targetFile.toFile());
+            //STORE TARGET FILE
+            pathFileTarget.getParent().toFile().mkdirs();
+            Files.createFile(pathFileTarget);
+            sourceFile.write(pathFileTarget.toFile());
 
             //RETURN SUCCESS FLAG
             rs.setStatus(HttpServletResponse.SC_CREATED);
