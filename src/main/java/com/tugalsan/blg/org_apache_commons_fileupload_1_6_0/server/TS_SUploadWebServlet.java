@@ -7,9 +7,9 @@ import java.nio.file.Path;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.FileCleanerCleanup;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.javax.JavaxFileCleaner;
+import org.apache.commons.fileupload2.javax.JavaxServletFileUpload;
 
 @WebServlet("/u")
 @MultipartConfig(
@@ -38,17 +38,19 @@ public class TS_SUploadWebServlet extends HttpServlet {
     public static void call(HttpServlet servlet, HttpServletRequest rq, HttpServletResponse rs) {
         try {
             //CHECK IF REQUEST IS MULTIPART
-            if (!ServletFileUpload.isMultipartContent(rq)) {
+            if (!JavaxServletFileUpload.isMultipartContent(rq)) {
                 println(rs, "USER_NOT_MULTIPART");
                 return;
             }
 
             //GETING ITEMS
             //WARNING: Dont touch request before this, like execution getParameter or such!
-            var items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(rq);
+            var fileFactory = DiskFileItemFactory.builder().get();
+            var fileUpload = new JavaxServletFileUpload(fileFactory);
+            var fileItems = fileUpload.parseRequest(rq);
 
             //GETTING PROFILE OBJECT
-            var profile = items.stream().filter(item -> item.isFormField()).findFirst().orElse(null);
+            var profile = fileItems.stream().filter(item -> item.isFormField()).findFirst().orElse(null);
             if (profile == null) {
                 println(rs, "RESULT_UPLOAD_USER_PROFILE_NULL");
                 return;
@@ -64,7 +66,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             println(rs, "profileValue: " + profileValue);
 
             //GETING SOURCEFILE OBJECT
-            var sourceFile = items.stream().filter(item -> !item.isFormField()).findFirst().orElse(null);
+            var sourceFile = fileItems.stream().filter(item -> !item.isFormField()).findFirst().orElse(null);
             if (sourceFile == null) {
                 println(rs, "RESULT_UPLOAD_USER_SOURCEFILE_NULL");
                 return;
@@ -109,10 +111,10 @@ public class TS_SUploadWebServlet extends HttpServlet {
 
     //---------------------------- LISTENER ----------------
     @WebListener
-    public class ApacheFileCleanerCleanup extends FileCleanerCleanup {
+    public class ApacheFileCleanerCleanup extends JavaxFileCleaner {
 
     }
-
+    
     //----------------------------- UTILS -----------------------
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void _throwAsUncheckedException(Throwable exception) throws T {
