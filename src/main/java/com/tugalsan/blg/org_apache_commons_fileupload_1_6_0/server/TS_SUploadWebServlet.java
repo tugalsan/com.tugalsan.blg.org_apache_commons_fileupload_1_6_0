@@ -4,9 +4,11 @@ import javax.servlet.http.*;
 import static java.lang.System.out;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
+import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.javax.JavaxFileCleaner;
 import org.apache.commons.fileupload2.javax.JavaxServletFileUpload;
@@ -47,7 +49,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             //WARNING: Dont touch request before this, like execution getParameter or such!
             var fileFactory = DiskFileItemFactory.builder().get();
             var fileUpload = new JavaxServletFileUpload(fileFactory);
-            var fileItems = fileUpload.parseRequest(rq);
+            List<FileItem> fileItems = fileUpload.parseRequest(rq);
 
             //GETTING PROFILE OBJECT
             var profile = fileItems.stream().filter(item -> item.isFormField()).findFirst().orElse(null);
@@ -89,7 +91,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
             //STORE TARGET FILE
             pathFileTarget.getParent().toFile().mkdirs();
             Files.createFile(pathFileTarget);
-            sourceFile.write(pathFileTarget.toFile());
+            sourceFile.write(pathFileTarget);
 
             //RETURN SUCCESS FLAG
             rs.setStatus(HttpServletResponse.SC_CREATED);
@@ -114,7 +116,7 @@ public class TS_SUploadWebServlet extends HttpServlet {
     public class ApacheFileCleanerCleanup extends JavaxFileCleaner {
 
     }
-    
+
     //----------------------------- UTILS -----------------------
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void _throwAsUncheckedException(Throwable exception) throws T {

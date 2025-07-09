@@ -10,17 +10,34 @@
             <artifactId>javax.servlet-api</artifactId>
             <version>4.0.1</version>
             <scope>provided</scope>
-        </dependency>        
+        </dependency>   
+        
+               
         <dependency><!-- poi excel does not like u! -->
             <groupId>org.apache.commons</groupId><!-- commons-fileupload -->
-            <artifactId>commons-fileupload2-javax</artifactId><!-- commons-fileupload -->
+            <artifactId>commons-fileupload2-core</artifactId><!-- commons-fileupload -->
+            <scope>system</scope>
+            <systemPath>C:/git/api/com.tugalsan.api.servlet.upload.dep/commons-fileupload2-core/target/commons-fileupload2-core-2.0.0-M5-SNAPSHOT.jar</systemPath>
             <exclusions>
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
                 </exclusion>
             </exclusions>
-            <version>2.0.0-M4</version><!-- 1.5 was working -->
+            <version>2.0.0-M5</version><!-- 1.5 was working -->
+        </dependency>
+        <dependency><!-- poi excel does not like u! -->
+            <groupId>org.apache.commons</groupId><!-- commons-fileupload -->
+            <artifactId>commons-fileupload2-javax</artifactId><!-- commons-fileupload -->
+            <scope>system</scope>
+            <systemPath>C:/git/api/com.tugalsan.api.servlet.upload.dep/commons-fileupload2-javax/target/commons-fileupload2-javax-2.0.0-M5-SNAPSHOT.jar</systemPath>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+            </exclusions>
+            <version>2.0.0-M5</version><!-- 1.5 was working -->
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
